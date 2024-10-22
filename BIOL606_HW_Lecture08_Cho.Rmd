@@ -1,0 +1,274 @@
+---
+title: "BIOL606 WED 03/01/23 HW LEC08 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "03/01/2023"
+output: html_notebook
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary packages
+```{r setup, message=FALSE}
+library(AICcmodavg)
+library(tidyverse)
+library(ggfortify)
+library(corrplot)
+library(multcomp)
+library(ggplot2)
+library(nlme)
+library(car)
+
+print("Done. All packages loaded")
+```
+
+#Step 2-A (HW Question #1 / Prompt #1): Import data and make exploratory data plots
+```{r}
+#Read data and save as data frame
+limp <- read.csv("Limpet_grazing.csv")
+
+print("Done. Data loaded as saved as dataframe")
+
+dim(limp)
+head(limp)
+```
+
+#Step 2-B (HW Question #1 / Prompt #1): Import data and make exploratory data plots
+```{r}
+#Convert "Site" column as a factor
+limp$Site <- as.factor(limp$Site)
+
+#Verify if the column has been properly converted to the factor
+print(paste("Is the column 'site' factor? (FYI, 'TRUE' if Yes & 'FALSE' if No):" , is.factor(limp$Site)))
+```
+
+#Step 2-C (HW Question #1 / Prompt #1): Import data and make exploratory data plots
+```{r}
+#Make exploratory data plots
+
+#Limpettreat is categorical predictor,x
+#tempC is IV,x
+#Fo is DV,Y
+inital_plot <- ggplot(limp, aes(x = TempC, y = Fo, col = LimpetTreat)) +  
+                geom_boxplot() + 
+                facet_wrap(.~LimpetTreat)
+
+print(inital_plot)
+```
+
+#Step 2-D (HW Question #1 / Prompt #1): Import data and make exploratory data plots
+```{r}
+#quick look at the variation among blocks
+ggblock <- ggplot(limp, aes(x = Site, y = Fo, col=Site)) + geom_boxplot()
+
+print(ggblock)
+```
+
+#Step 3 (HW Question #2 / Prompt #2): Fit a linear model with L-Treat & TempC interaction accounting for blocking by Site
+```{r}
+#make the model using lme()
+#the "random = ~1|block" part tells the lme function that the (categorical) variable block is being treated as the random intercept (From the LECTURE blocked example code)
+blockmodel <- lme(Fo ~ LimpetTreat * TempC, random = ~1|Site, data = limp, method="ML")
+
+#Do anova
+anova(blockmodel)
+
+#Do summary
+summary(blockmodel)
+```
+
+#Step 4 (Hw Question #3 / Prompt #3): Produce diagnostic plots to check for homoscedasticity and normality of the  residuals
+```{r}
+#(From the LECTURE 08 blocked example code) his produces the same as the first auto plot 
+plot(blockmodel) 
+
+#(From the LECTURE 08 blocked example code)This produces the qqnorm like you see in the auto plot 
+qqnorm(residuals(blockmodel))
+
+## Add a theoretical line according to the normal distribution on qqnorm
+##Check out more: https://statisticsglobe.com/r-qqplot-qqnorm-qqline-function
+qqline(residuals(blockmodel), col = "red")   
+
+#(From the LECTURE 08 blocked example code) A way to just look at a historgram of the residuals to eyeball normality
+hist(resid(blockmodel))
+```
+
+#Step 5-A (Hw Question #4 / Prompt #4): Write a results statement based on your model output, reporting the relevant  significant terms
+```{r}
+#(From the LECTURE 08 blocked example code) Another approach to evaluating your fixed factors is to test each factor one at a time, using likelihood ratio tests. This is used fairly commonly, but it still has the challenge of deciding which order to test things 
+
+#(From the LECTURE 08 blocked example code) likelihood ratio approach - manually testing each fixed factor
+blockmodel2 <- update(blockmodel, ~.-LimpetTreat:TempC) 
+
+#(From the LECTURE 08 blocked example code) perform the likelihood ratio test, which compares the two models. If they are significantly different, that is evidence that the thing you took out (in this case, the AMF:damage interaction, is important for explaining variation in your DV
+anova(blockmodel,blockmodel2) 
+```
+
+#Step 5-B (Hw Question #4 / Prompt #4): Write results statement based on your model output, reporting the relevant  significant terms
+```{r}
+#(From the LECTURE 08 blocked example code) REFIT BLOCKMODEL
+options(contrasts = c("contr.sum","contr.poly")) 
+blockmodel <- lme(Fo ~ LimpetTreat * TempC, random = ~1|Site, data = limp, method = "ML")
+
+#(From the LECTURE 08 blocked example code) type III ANOVA test
+Anova(blockmodel, type=3) 
+options(contrasts = c("contr.treatment","contr.poly"))
+```
+
+#Step 5-C (Hw Question #4 / Prompt #4): Write a results statement based on your model output, reporting the relevant  significant terms
+```{r}
+print("There was a siginificant effect of the LimpetTreat X TempC interactionon on the response, Fo, amount of microalgae on plates (likelihood ratio = 17.90724, p=5e-04). The amount of microalgae on plates  is definitely affected by the Limp Treatment , but the amount of microalgae on plates is somewhat affected by temperature")
+```
+
+##PLEASE NOTE: I did it again to understand better
+##PLEASE NOTE: I did it again to understand better
+#Reading HW: Mixed model blog post (Hajduk 2016)
+```{r}
+#Invoke a necessary package
+library(lme4)
+library(ggplot2)
+print("Done. Libraries loaded")
+
+#load data
+load("dragons.RData")
+print("Done. Data loaded")
+
+#display first 6 rows of data
+head(dragons)
+
+#Peek at the distribution of the response variable
+hist(dragons$testScore, col='darkred')
+print("Based on the histogram colored in dark red, Data seems normally distributed - Good ✓")
+
+#standardize the explanatory variables
+dragons$bodylength2 <- scale(dragons$bodyLength)
+print("'scale()' centers the data then scales it")
+
+print("Now let's find out if dragons' intellegence(test score in data) is affected by the body length")
+
+#Fit the model with drgons' intelligence ('testScore') as the response, y AND the bodylength2 as the predictor, x
+basic.lm <- lm(testScore ~ bodylength2, data = dragons)
+summary(basic.lm)
+
+#Create inital plot
+first_plot <- ggplot(dragons, aes(x = bodyLength, y = testScore) ) +
+              geom_point() +
+              geom_smooth(method = "lm")
+
+#Display the plot
+print(first_plot)
+
+print("Based on the initial lm model and initial plot, the biger dragons seem to do better in the intelligence test")
+
+print("Verify the assumptions by plotting the residuals. Note that the shown red line is considered ideal when the line is flat")
+
+plot(basic.lm, which = 1)
+print("As shown above, it is not perfect. The mid red line show slight bump")
+
+print("Verify the assumptions by plotting the Q-Q plot")
+
+plot(basic.lm, which = 2)
+print("There seems to be some extreme low values and extreme high values")
+
+print("Verify observation independence by plotting a boxplot. In other words, is data indepedent?")
+
+boxplot(testScore ~ mountainRange, data = dragons)
+print("There seems to be various testscores depends on mountain ranges that dragons live")
+
+print("Verify observation independence by plotting a scatter plot then color it by mountain range")
+mountain_plot <- ggplot(dragons, aes(x = bodyLength, y = testScore, colour = mountainRange) ) +
+                 geom_point(size = 2.5) +
+                 theme_classic() +
+                 theme(legend.position = "none")
+print(mountain_plot)
+
+print("Now time to do run multiple analyses")
+
+multiple_plot <- ggplot( aes(bodyLength, testScore), data = dragons ) + 
+                 geom_point() +
+                 facet_wrap(~ mountainRange) + xlab("Length") + ylab("test score")
+
+print(multiple_plot)
+print("As shown above, total eight analyses showing different dispersions")
+
+print("To estimate a slope AND intercept parameter for each regresion, 2 parameters, 3 sites AND 8 mountain ranges totaling 48 parameter estimates (2 * 3 * 8 = 48). This presents issues because decreased sample size and possible increased chance of the error due through carrying out multiple comparisons")
+
+print("Thus, modifying the current model is needed")
+
+mountain.lm <- lm(testScore ~ bodylength2 + mountainRange, data = dragons)
+summary(mountain.lm)
+
+print("Based on the summary, the body length is not significant. The summary model is estimating the difference in test scores between mountain ranges. Whether body length affects test scroes does not matter much. Knowing control for the variation coming from mountain ranges matter more. This is known as random factors")
+
+print("For 'Fixed & Random effects', main purpose in evaulating the levels of variable ans using data from all its levels. As far as dragons concerned, the main interst in making conclusions about how dragons body length impacts the dragons' test scroe so body length is a fixed effect")
+
+print("On the other hand, random effeccts (or random factors - as they will be categorical ) are usually grouping factors. In addition, data fron the random effect is just a sample of all the posibilites. Notice that random does not have to with mathmatical randomness. For now, consider it as the groupig variables.")
+
+print("Strictly speaking, it is all about making models better AND getting better estimates")
+
+print("In this particular case, the effects of the mountain range should be controlled. The sampled data set does not cotain all the mountain ranges in the world; it only contains eight, The data set is just  a random sample of all the exisiting mountain ranges.")
+
+print("Fit the random effect using 1|variablename:")
+mixed.lmer <- lmer(testScore ~ bodylength2 + (1|mountainRange), data = dragons )
+summary(mixed.lmer)
+
+#plot data
+plot(mixed.lmer)
+
+#qqplot
+qqnorm(resid(mixed.lmer))
+qqline(resid(mixed.lmer))
+
+#look at the summary
+summary(mixed.lmer)
+
+#Take the variance for the mountainRange then divide it by the total variance
+339.7/(339.7 + 223.8)
+
+head(dragons)
+str(dragons)
+
+dragons <- within(dragons, sample <- factor(mountainRange:site))
+
+#treats the two random effects as if they are crossed
+mixed.WRONG <- lmer(testScore ~ bodylength2 + (1|mountainRange) + (1|site), data = dragons )
+
+mixed.lmer2 <- lmer(testScore ~ bodylength2 + (1|mountainRange) + (1|sample), data = dragons )
+
+#plot again
+ggplot(dragons, aes(x = bodyLength, y = testScore, colour = site)) +
+  facet_wrap(~mountainRange, nrow=3) +
+  geom_point() +
+  theme_classic() +
+  geom_line(data = cbind(dragons, pred = predict(mixed.lmer2)), aes(y = pred)) +
+  theme(legend.position = "none")
+
+
+#prsentation of model results
+
+library(stargazer)
+
+stargazer(mixed.lmer2, type = "text",
+          digits = 3,
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          digit.separator = "")
+
+#Fit the models, a full model and a reduced model  with the  fixed effect (bodyLength2):
+full.lmer <- lmer(testScore ~ bodylength2 + (1|mountainRange) + (1|sample), 
+				  data = dragons, REML = FALSE)
+reduced.lmer <- lmer(testScore ~ 1 + (1|mountainRange) + (1|sample), 
+					     data = dragons, REML = FALSE)
+
+#compare them:
+anova(reduced.lmer, full.lmer)
+
+
+print("HW: Mixed model blog post (Hajduk 2016) coding all done")
+```
+
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

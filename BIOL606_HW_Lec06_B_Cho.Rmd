@@ -1,0 +1,131 @@
+---
+title: "BIOL606 WED 02/13/23 HW LEC04 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "02/13/2023"
+output: html_notebook
+---
+
+#Step0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step1: Invoke necessary packages
+```{r setup, message=FALSE}
+library(tidyverse)
+library(ggfortify)
+library(multcomp)
+library(ggplot2)
+library(car)
+
+print("Done. All packages loaded")
+```
+
+#Step2 (Question 1 / Prompt 1): Import lecture5_NEWcucumberdamage.csv
+```{r}
+new_cucumberdamage <- read.csv("lecture5_NEWcucumberdamage.csv")
+print("Done. All Data loaded and saved as dataframe")
+
+head(new_cucumberdamage) #Display first six rows data
+dim(new_cucumberdamage) #check dimensions of data
+```
+
+#Step 3 (Question 2 / Prompt 2): If you're going to analyze totalfruits again, is this dataset balanced with regards to  pollination & herbivory? What about pollination & leaf damage?
+```{r}
+#To check the "balance-ness" of data, table() function is used.
+
+# The following website explains more: https://www.projectpro.io/recipes/is-table-function-r-useful
+##(from the website) "Table function R performs a tabulation of categorical variable and gives its frequency as output. #It is further useful to create conditional frequency table and Proportinal frequency table".
+
+# HW Question 1 / Prompt 1 asks to do separate checks on: pollination & herbivory AND pollination & leaf damage
+
+#table_herb checks categorical variables on pollination & herbivory
+table_herb <- table(new_cucumberdamage$herbivory, new_cucumberdamage$pollination)
+print(table_herb)
+
+print("As shown above, categorical variables on pollination & herbivor (first table) looks balanced. The data contains NA, but it seems that table() function excluded. Therefore, it will be assumed that categorical variables on pollination & herbivor are based on the table. FYI, Balanced designs = equal sample size in all treatment combinations")
+
+
+#table_leaf checks categorical variables on pollination & leafdamage
+table_leaf <- table(new_cucumberdamage$pollination, new_cucumberdamage$leafdamage)
+print(table_leaf)
+
+print("As shown above, categorical variables on pollination & leaf damage (second table) clearly indicate it is unbalanced. FYI, Balanced designs = equal sample size in all treatment combinations ")
+```
+
+
+#Step 4 (Question 3 / Prompt 3) Pick one of these pairs of IVs (pollination & herbivory, or pollination & leaf  damage). Determine if these variables affect totalfruits, including an interaction, and  going through the same steps you did last time to fit the model
+```{r}
+#I picked pollination & leaf damage as it is unbalanced, which seems to be more prevalent in biological data
+#I picked pollination & leaf damage as it is unbalanced, which seems to be more prevalent in biological data
+
+print("Upon visually inspecting data, the dataset in unbalanced because it contains N/As")
+
+#pollination & hervibory as model 2
+model_1_a <- lm(totalfruits ~  leafdamage * herbivory, data=new_cucumberdamage)
+autoplot(model_1_a)
+anova(model_1_a)
+summary(model_1_a)
+
+model_1_b <- glm(totalfruits ~  leafdamage * herbivory, data=new_cucumberdamage, family=poisson)
+autoplot(model_1_b)
+anova(model_1_b)
+summary(model_1_b)
+
+model_1_c <- glm(totalfruits ~  leafdamage * herbivory, data=new_cucumberdamage, family=quasipoisson)
+autoplot(model_1_c)
+anova(model_1_c)
+summary(model_1_c)
+
+#pollination & leaf damage as model 1
+model_2_a <- lm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage)
+autoplot(model_2_a)
+
+#family = poisson
+model_2_b <- glm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage, family=poisson)
+autoplot(model_2_b)
+anova(model_2_b)
+summary(model_2_b)
+
+#family = quasi poisson
+model_2_c <- glm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage, family=quasipoisson)
+autoplot(model_2_c)
+anova(model_2_c)
+summary(model_2_c)
+```
+#model 3: leafdamage * herbivory
+```{r}
+options(contrasts = c("contr.sum","contr.poly")) #change the contrasts settings
+model_3_lh <- lm(totalfruits ~ leafdamage * herbivory, data=new_cucumberdamage ) #then refit the model under the new settings
+Anova(model_3_lh,type=3) #or Anova(model,type="III")
+options(contrasts = c("contr.treatment","contr.poly")) #switch them back
+```
+#Type 1: leafdamage * herbivory
+```{r}
+#Type 1
+options(contrasts = c("contr.sum","contr.poly")) #change the contrasts settings
+model_1_lh <- lm(totalfruits ~ leafdamage * herbivory, data=new_cucumberdamage ) #then refit the model under the new settings
+
+anova(model_1_lh) #or Anova(model,type="III")
+options(contrasts = c("contr.treatment","contr.poly")) #switch them back
+```
+
+#Type 3 for leafdamage *pollination
+```{r}
+#Type 3
+options(contrasts = c("contr.sum","contr.poly")) #change the contrasts settings
+model_3_lp <- lm(totalfruits ~ leafdamage *pollination, data=new_cucumberdamage ) #then refit the model under the new settings
+
+Anova(model_3_lp,type=3) #or Anova(model,type="III")
+options(contrasts = c("contr.treatment","contr.poly")) #switch them back
+```
+#Type 1: for leafdamage *pollination
+```{r}
+#Type 1
+options(contrasts = c("contr.sum","contr.poly")) #change the contrasts settings
+model_1 <- lm(totalfruits ~ leafdamage *pollination, data=new_cucumberdamage ) #then refit the model under the new settings
+
+anova(model_1) #or Anova(model,type="III")
+options(contrasts = c("contr.treatment","contr.poly")) #switch them back
+```

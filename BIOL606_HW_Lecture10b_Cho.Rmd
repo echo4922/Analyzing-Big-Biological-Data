@@ -1,0 +1,163 @@
+---
+title: "BIOL606 MON 4/3/23 HW LEC10-b Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "04/03/2023"
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary packages
+```{r setup, message=FALSE}
+
+
+library(car)
+library(nlme)
+library(MuMIn)
+
+library(psych)
+library(ggplot2)
+library(multcomp)
+library(corrplot)
+library(ggfortify)
+library(tidyverse)
+library(AICcmodavg)
+library(scatterplot3d)
+
+print("Done. All packages loaded")
+```
+
+#Step 2: Import data
+```{r}
+birdmass <- read.csv("offspring_mass.csv", header=T)
+
+print("Data loaded and saved as dataframe")
+
+head(birdmass)
+dim(birdmass)
+```
+
+#Step 3: Convert "plant" column as a factor
+```{r}
+birdmass$plant <- as.factor(birdmass$plant)
+
+#Verify if the column has been properly converted to the factor
+print(paste("Is the column 'plant' factor? (FYI, 'TRUE' if Yes & 'FALSE' if No):" , is.factor(birdmass$plant )))
+```
+
+#Step 4 (HW Question #1 / Prompt #1): Draw on your extensive personal knowledge of bird nesting biology to come up  with 3 hypotheses about how the explanatory variables might affect nestling  bodymass. The hypotheses can have one or more IVs (try to come up with a mix).  State these biologically, e.g., "Bird nests that are higher off the ground and closer  to a forest edge will be exposed to increased sunlight, and the heat stress will  reduce nestling bodymass
+```{r}
+#response variable y is body-mass and it is for all hypotheses
+#mix and match for x
+print("As an expert of bird nesting biology(not), I decided to investigate potential ways to increase offspring birds' survival. In wild wild west (or anywhere really), what are the factors of offspring birds to survive? I would like to think when they are well fed and have good body mass, they will more likely to survive against potential predators. Thus, all of my hypotheses will be potential factors for increased body mass")
+
+cat("\n") 
+
+print("Hypothesis #1/Model A): Offspring birds whose feedings per day are higher and offspring birds who are  located higher in trees will result higher body mass. In other words, ↑ (increased) feedings per day AND ↑ (increased) height results ↑ (increased) neslting body mass")
+
+cat("\n") 
+
+print("Hypothesis #2/Model B): Offspring birds whose feedings per day are higher and  offspring birds who have high canopy cover will result higher body mass. In other words, ↑ (increased) feedings per day AND ↑ (increased) canopy cover results ↑ (increased) neslting body mass ")
+
+cat("\n") 
+
+print("Hypothesis #3/Model C): Offspring birds whose  distance edge are higher and  offspring birds who have higher feeding per day will result higher body mass. In other words, ↑ (increased) distance edge AND ↑ (increased)  feeding per day results ↑ (increased) neslting body mass ")
+```
+
+#Step 5-A (HW Question #2 / Prompt #2): Build a glm() model for each hypothesis and save it as an object, e.g., modA,  modB, modC, etc. Also build a model with only an intercept (~ 1) as the IV
+```{r}
+##Hypothesis 1 / model A
+
+#Create model
+
+#Here, y =  body-mass (response variable and it is for all hypotheses)
+#3 predictor variables (x) are distance edge, feedings per day AND height of the nests on tree(s)
+mod_A <- glm(offspring_mass ~ dist_edge + feedings_per_day +  height , data=birdmass)
+
+plot(mod_A) #Create 4 auto plots of the model
+
+summary(mod_A) #Create summary table of the model 
+
+print("Looking at 4 auto plots, there seems to be no distinctive outliers critical enough to violate assumptions.")
+
+cat("\n")
+
+print("As shown above, the summary table indicates that there is feedings_per_day is siginifcant as the p-value is less than 0.05. The computed p-value is 2.4e-05, which has three star siginificance.")
+```
+
+
+#Step 5-B (HW Question #2 / Prompt #2): Build a glm() model for each hypothesis and save it as an object, e.g., modA,  modB, modC, etc. Also build a model with only an intercept (~ 1) as the IV
+```{r}
+#Here, y =  body-mass (response variable and it is for all hypotheses)
+#3 predictor variables (x) are distance edge, feedings per day AND canopy cover of the nests on tree(s)
+
+#create model
+mod_B <- glm(offspring_mass ~ dist_edge + feedings_per_day +  canopy_cover , data=birdmass)
+
+plot(mod_B) #Create 4 auto plots of the model
+
+summary(mod_B) #Create summary table of the model 
+
+print("Looking at 4 auto plots, there seems to be no distinctive outliers critical enough to violate assumptions.")
+
+cat("\n")
+
+print("As shown above, the summary table indicates that there is feedings_per_day is siginifcant as the p-value is less than 0.05. The computed p-value is 2.73e-05, which has a three star siginificance.")
+```
+
+#Step 5-C (HW Question #2 / Prompt #2): Build a glm() model for each hypothesis and save it as an object, e.g., modA,  modB, modC, etc. Also build a model with only an intercept (~ 1) as the IV
+```{r}
+#Here, y =  body-mass (response variable and it is for all hypotheses)
+#2 predictor variables (x) are distance edge, feedings per day
+
+#create model
+mod_C <- glm(offspring_mass ~ dist_edge + feedings_per_day , data=birdmass)
+
+
+plot(mod_C) #Create 4 auto plots of the model
+
+summary(mod_C) #Create summary table of the model 
+
+print("Looking at 4 auto plots, there seems to be no distinctive outliers critical enough to violate assumptions.")
+
+cat("\n")
+
+print("As shown above, the summary table indicates that there is feedings_per_day is siginifcant as the p-value is less than 0.05. The computed p-value is 2.43e-05, which has a three star siginificance.")
+```
+  
+#Step 5-D (HW Question #2 / Prompt #2): Build a glm() model for each hypothesis and save it as an object, e.g., modA,  modB, modC, etc. Also build a model with only an intercept (~ 1) as the IV
+```{r}
+#build a model with only an intercept (~ 1) as the Intercept
+mod_D <- glm(offspring_mass ~ 1, data=birdmass)
+
+plot(mod_D) #create 4 autoplots 
+##NOTE: With only an intercept (~ 1) as the IV, plots will look strange but still educational to see what it looks like
+
+print("Looking at 4 auto plots, due to an only intercept (~ 1) as the IV, plots look strange but still educational to see what it looks like")
+
+summary(mod_D)
+```
+
+#Step 6 (HW Question #3 / Prompt #3): Compare these models
+```{r}
+Cand.mods <- list(mod_A, mod_B, mod_C, mod_D)  
+aictab <- model.sel(Cand.mods)
+aictab
+```
+
+#Step 7 (HW Question #4 / Prompt #4): Draw conclusions from the model selection output. Which of your hypotheses is/are  best supported?
+```{r}
+print("In conclusion, based on comparison of all models, Hypothesis #1/Model A AND Hypothesis #2/Model B are bested supported. One thing to note is that feeding per day seem to be biggest factor for our birds friends to have good body mass, which makes sense as a common sense. We know that the more we eat, the more we gain weight and it is same for offspring birds as well.")
+
+
+#mod_A feedings_per_day  0.802057   0.180621   4.441  2.4e-05 ***
+#mod B feedings_per_day  0.799441   0.181409   4.407 2.73e-05 ***
+```
+
+##End of the analysis
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

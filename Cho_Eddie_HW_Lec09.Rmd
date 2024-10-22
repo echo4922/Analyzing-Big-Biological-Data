@@ -1,0 +1,35 @@
+---
+title: "BIOL606_WED_JAN_25_HTML"
+author: "Eddie Cho"
+date: "1/25/2022"
+output: html_document
+---
+
+#Step 1: Create empty figure
+```{r}
+plot.new()
+print("Done. Creaated empty figure")
+```
+
+
+#Step 2: Have the code save a pdf file version of this figure 
+```{r}
+
+
+print("Done. Saved the figure as a PDF file")
+```
+
+
+#Step 3: Generate a 2nd version of the figure, with text of 
+```{r}
+
+print("Done. Generated a 2nd version of the figure, with text of your name")
+```
+
+#Step 4: Have the code save a png image of the 2nd figure
+```{r}
+
+print("Done. Saved a png image of the 2nd figure")
+```
+
+

@@ -1,0 +1,120 @@
+---
+title: "BIOL606 WED 4/19/23 HW LEC16 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+due date: 04/19/2023
+output:
+  html_document:
+    df_print: paged
+---
+
+#Step 0: Verify current directory and verify the data file 
+```{r}
+print("The analysis started...")
+
+cat("\n")
+
+print(paste("YOUR current working directory is:", getwd()))
+
+cat("\n")
+
+print(paste("Verifying if the data file for this HW is in YOUR working directory...'True' if it exists, 'False' if it does NOT exists:", file.exists('macnally_full2.csv')))
+```
+
+#Step 1: Invoke necessary libraries/packages
+```{r setup, message=FALSE}
+
+library(vegan)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(ggfortify)
+
+print("Done. All packages loaded")
+```
+
+#Step 2: Import data
+```{r}
+bird <- read.csv("macnally_full2.csv", header=T)
+
+print("Done. Data loaded and saved as dataframe called 'bird'. ")
+
+head(bird) #Display first 6 rows
+
+dim(bird) #Display Dimension
+```
+
+#Step 3-A (HW Question #1 / Prompt #1): Run a NMDS on the bird data (macnally_full2.csv, leave out columns 1&2, SITE + HABITAT), using Bray-Curtis as the distance metric with the vegan metaMDS function
+```{r}
+#Remove 1st column (SITE, -1)  and 2nd column (HABITAT, -2) and save a new data frame, 'new_bird'
+new_bird <- bird[,c(-1, -2)]
+
+head(new_bird) #Display first 6 rows
+
+dim(new_bird) #Display Dimension
+```
+
+#Step 3-B (HW Question #1 / Prompt #1): Run a NMDS on the bird data (macnally_full2.csv, leave out columns 1&2, SITE + HABITAT), using Bray-Curtis as the distance metric with the vegan metaMDS functions
+```{r}
+##NOTE to SELF: metaMDS function likes numerical values, hence use the new data frame with removed columns, SITE & HABITAT 
+
+#Use Bray-Curtis as the distance metric with the vegan metaMDS functions
+bc.nmds <- metaMDS(new_bird, distance = "bray", k=2, trace=0)
+
+#print bc.nmds
+print(bc.nmds)
+```
+
+#Step 4-A (HW Question #2 / Prompt #2): Generate a NMDS ordination plot showing the sites only (no species arrows), and draw ellipsoid hulls around each of the 6 habitat types to show how habitat maps onto the ordination.
+```{r}
+#create empty plot
+nmds_ordiplot = ordiplot(bc.nmds, type='none', main = paste0('Stress = ', round(bc.nmds$stress, dig=3) ), las =1 )
+
+#Then, create polygons based on HABITAT using ordihull
+ordihull(bc.nmds,  draw ='polygon', groups = bird$HABITAT, label = T)
+```
+
+#Step 4-B (HW Question #2 / Prompt #2): Color the site points by HABITAT type (column 2 of data frame)
+```{r}
+#create empty plot
+nmds_ordiplot = ordiplot(bc.nmds, type='none', main = paste0('Stress = ', round(bc.nmds$stress, dig=3) ), las =1 )
+
+#Then, assign 6 colors based on 6 HABITATS using ordihull
+ordihull(bc.nmds,  draw ='polygon', groups = bird$HABITAT, col=c('skyblue','orange', 'yellow', 'black', 'green', 'purple' ), label = T)
+```
+
+#Step 4-C (HW Question #3 / Prompt #3): Use the ordiellipse() function, and the groups argument should be defined using the HABITAT data in column 2 of the data frame
+```{r}
+#create empty plot
+nmds_ordiplot = ordiplot(bc.nmds, type='none', main = paste0('Stress = ', round(bc.nmds$stress, dig=3) ), las =1 )
+
+#Then, assign 6 colors based on 6 HABITATS using ordiellipse
+ordiellipse(bc.nmds,  draw ='polygon', groups = bird$HABITAT, col=c('skyblue','orange', 'yellow', 'black', 'green', 'purple' ), label = T)
+
+```
+
+#Step 4-C (HW Question #3 / Prompt #3): Use the ordiellipse() function, and the groups argument should be defined using the HABITAT data in column 2 of the data frame
+```{r}
+#create empty plot
+nmds_ordiplot = ordiplot(bc.nmds, type='none', main = paste0('Stress = ', round(bc.nmds$stress, dig=3) ), las =1 )
+
+#Then, assign 6 colors based on 6 HABITATS using ordie llipse
+ordiellipse(bc.nmds,  draw ='polygon', groups = bird$HABITAT, col=c('skyblue','orange', 'yellow', 'black', 'green', 'purple' ), label = F)
+
+#In addition, add legends based on assinged 6 colors
+legend('topleft', legend=c('Mixed', 'Gipps.Manna', 'Montane Forest', 'Foothills Woodland', 'Box-Ironbark', 'River Red Gum' ), col = c('skyblue','orange', 'yellow', 'black', 'green', 'purple'), title = 'HABITAT', pch=1)
+```
+
+#Step 4-D (HW Question #4 / Prompt #4): Based on your plot, describe which (if any) of the habitats differ in community composition
+```{r}
+print("Based on the plot above(STEP 4-D), Foothills Woodland (highlighted 'black'), Gipps.Manna (highlighted 'orange'), Box-Ironbark (highlighted 'green') indicate similarities as their elipses shape overlap. ")
+
+cat("\n")
+
+print("On the other hand, River Red Gum (highlighted 'purple'), Montane Forest (highlighted 'yellow') and Mixed (highlighted 'blue') do no indicate  similarities as their elipses shape do not overlap.")
+```
+
+##End of the analysis
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

@@ -1,0 +1,86 @@
+---
+title: "BIOL606_WED_HW_LEC02_[Cho]_NOTEBOOK_HTML"
+author: "Eddie Cho"
+date: "1/25/2022"
+output: html_document
+---
+
+#Step0: Verify current directory
+```{r}
+print("The analysis started...")
+print("YOUR current working directory is shown below")
+getwd()
+```
+#Step1: Load libraries & data
+```{r}
+library(dplyr)
+library(ggplot2)
+
+loaded_data <- read.csv("NEE_snowmelt_Biol606.csv")
+print("Done.  loaded all libraries and  data and saved data as dataframe")
+
+head(loaded_data) #display first 5 rows of data
+dim(loaded_data) #display dimension of data
+```
+#Step2:Replicate two figures for HW #02  as exactly shown
+```{r}
+#create ggplot and save it as data frame "original figure"
+orginal_figure <- ggplot(loaded_data, aes(x = precipitation_Jun_Aug, y = CumC_uptake_Jun_Aug, colour = SITE)) + geom_point()
+
+#print the figure
+print(orginal_figure)
+
+#Using basic syntax of facet_wrap, the each figure looks small 
+orginal_figure + facet_wrap(~SITE)
+
+#facet_grid syntax make each figure larger 
+#this is what graphs looks like on Homework questions
+orginal_figure + facet_grid(. ~ SITE)
+```
+#Step3: Update two figures
+```{r}
+#create ggplot and save it as data frame "updated figure"
+updated_figure <- ggplot(loaded_data, aes(x = precipitation_Jun_Aug, y = CumC_uptake_Jun_Aug, colour = SITE)) + geom_point(size = 1.5) +
+xlab("Total Precipitation from the beginning of June to August") +  #add x label
+ylab("Cumulative carbon uptake by vegetation from June to  August ") +  #add y label 
+theme(strip.background = element_rect(fill = "yellowgreen") ) #add theme 
+
+#display the figure
+print(updated_figure)
+
+#display with facet_grid 
+# notice that labels or each graph looks cramped
+f1 <- updated_figure + facet_grid(. ~ SITE)
+print(f1)
+
+#display with facet_grid 
+#scale syntax makes slightly better, but axis labels cramped
+f2 <- updated_figure +  facet_grid(~SITE, scales = "free") 
+print(f2)
+
+#After lots of searching on Google, I found a potential solution from:
+#https://www.geeksforgeeks.org/how-to-resize-a-graph-in-ggplot2-in-r/
+#Basically, adjusting theme text and line size enable axis labels to display properly
+#However, this may not be the best solution because it makes words look smaller making hard to read
+f3 <- updated_figure + facet_grid( ~ SITE, scales="free_x")  +
+theme(text = element_text(size = 6.5),element_line(size =0.5))
+print(f3)
+
+#Rearrange column
+#I took look at clasamate, Priyanshi Shah's codes and utilized codes of Priyanshi
+f4 <- updated_figure + facet_grid( ~ SITE, scales="free_x")  +
+theme(text = element_text(size = 6.5),element_line(size =0.5)) +
+facet_grid(~factor(SITE,levels=c("IVO","RUCoK","DKZah","RUChe","Imnavait Creek","BES","ATQ")))
+print(f4)
+```
+#Step5: Export two figures as PDF files
+```{r}
+p1 <- updated_figure #save figure #1 as "p1"
+p2 <- f3 #save figure #2 as "p2"
+
+ggsave("HW2_Figure_1.pdf", plot = p1)
+ggsave("HW2_Figure_2.pdf", plot = p2)
+```
+```{r}
+print("ALL ANALSYSIS DONE. CHECK YOUR HTML FILE & EXPORTED FILES. HAVE A GREAT DAY.")
+```

@@ -1,0 +1,155 @@
+---
+title: "BIOL606 MON 4/17/23 HW LEC15 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+due date: 04/17/2023
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary libraries/packages
+```{r setup, message=FALSE}
+
+library(vegan)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(ggfortify)
+library(factoextra)
+
+print("Done. All packages loaded")
+```
+
+#Step 2: Import Data
+```{r}
+Trego <- read.csv("Trego2018.csv", header=T)
+
+print("Data loaded and saved as dataframe called 'Trego' ")
+
+head(Trego) #Display first 6 rows
+
+dim(Trego) #Display Dimension
+```
+
+#Step 3 (HW Question #1 / Prompt #1): Visualize the data distribution for each compound. Should you log transform the data?
+```{r}
+#There are multiple compounds in data set and creating each compound using subset ($) would be painfully slow to write codes and compute
+#Thankfully, the following stackoverflow offers an efficient way to create histogram
+#Also, my great classmate, Emma, helpmed me with the folowing codes
+#https://stackoverflow.com/questions/35372365/how-do-i-generate-a-histogram-for-each-column-of-my-table
+
+##Creating plots takes some loading time
+
+#Step 3-A: Subtract(arbitrarily remove first(-1, ID) and second(-2, Maturity) columns
+Hist_Trego <- Trego[,c(-1, -2)]
+
+#Step 3-B: Verify removed columns by displaying first 6 rows
+head(Hist_Trego)
+
+#Step 3-C: Create Plot basd on "key" facet wrap and free x scales
+Initial_Histgroam_plot <- ggplot(gather(Hist_Trego), aes(value)) +
+                geom_histogram(bins = 10) +
+```
+
+
+```{r}
+facet_wrap(~key, scales = 'free_x')
+
+#Step 3-D: print the plot
+print(Initial_Histgroam_plot)
+
+cat("\n")
+
+print("Based on created histograms, it seems data needs to be log transformed")
+```
+
+#Step 4: Log transform data THEN re-plot data
+```{r}
+#Step 4-A: Log transform data
+log_Trego <-(log(Hist_Trego + .5))
+
+#Step 4-B: Verify log transforemd columns by displaying first 6 rows
+head(log_Trego)
+
+#Step 4-C: Create Plot basd on "key" facet wrap and free x scales
+Second_Histgroam_plot <- ggplot(gather(log_Trego), aes(value)) +
+                geom_histogram(bins = 10) +
+                facet_wrap(~key, scales = 'free_x')
+
+#Step 4-D: print the plot
+print(Second_Histgroam_plot)
+
+cat("\n")
+
+print("The log transformed plots look a bit better so proceed to next steps")
+```
+
+#Step 5 (HW Question #2 / Prompt #2): Perform a PCA (i.e. PCoA using Euclidean distance)
+```{r}
+pca_plot <- prcomp(Trego[,c(-1,-2)], center=TRUE, scale.=TRUE)
+
+summary(pca_plot)
+
+screeplot(pca_plot, col = "BLUE")
+
+print(pca_plot)
+```
+
+#Step 6 (HW Question #3 / Prompt #3): Show the relationship between the dolphins and the compounds using a biplot
+```{r}
+biplot(pca_plot, cex= c(1,1.3), xlab="PC-1", ylab="PC-2")
+```
+
+#Step 7 (HW Question #4 / Prompt #4): Find the most important compounds with the help of a contribution plot (fviz_contrib), subset the data and re-run PCA with only those compounds that fall above the red line on the contribution plot
+```{r}
+##NOTE: library(factoextra) needed for this chunk
+
+#For more, check out: http://www.sthda.com/english/wiki/fviz-contrib-quick-visualization-of-row-column-contributions-r-software-and-data-mining
+
+fviz_contrib(pca_plot, choice = c("var"), axes = 1 )
+
+cat("\n")
+
+print("Based on the contribution plot (fviz_contrib), there are total 17 compounds sit above the red line on the contribution plot")
+```
+
+#Step 8-A (HW Question #5 / Prompt #5): Evaluate their contribution to PC1 and PC2 using a biplot (fviz_pca_biplot). Color the two dolphin maturity classes on the biplot and include a convex hull around the two classes of dolphins. Suppress the arrows for the variables (compounds), only show the variable locations and text labels
+```{r}
+print("In order to subset 17 compounds, which sits on above the red line on the contribution plot, columns should be selected")
+
+cat("\n")
+
+print("These are the column numbers and names: column 6 (Chlordane.related), column 10 (DDT.related), column 11 (Dichlorobenzophenone), column 14 (Heptachlor.related), column 16 (MeO.B.CDE), column 17 (MeO.BDE), column 19 (Methylenebistrichloroanisole), column 20 (Methylsulfonyl.PCB), column 21 (Mirex.related), column 22 (PBB), column 23 (PBDE), column 26 (TCPM), column 27 (TCPMOH), column 29 (Unknown.2), column 31 (Unknown.4), column 34 (Unknown.7) ,column 35 (Unknown.8) ")
+
+subset_contribution <- Trego[,c(6, 10, 11, 14, 16:17, 19, 20:23, 26:27, 29, 31, 34:35 )]
+```
+
+#Step 8-B (HW Question #5 / Prompt #5): Evaluate their contribution to PC1 and PC2 using a biplot (fviz_pca_biplot). Color the two dolphin maturity classes on the biplot and include a convex hull around the two classes of dolphins. Suppress the arrows for the variables (compounds), only show the variable locations and text labels
+```{r}
+pca_plot_2 <- prcomp(Trego[,c(6, 10, 11, 14, 16:17, 19, 20:23, 26:27, 29, 31, 34:35)], center=TRUE, scale.=TRUE)
+
+summary(pca_plot_2)
+
+screeplot(pca_plot_2, col = "ORANGE")
+
+print(pca_plot_2)
+```
+
+#Step 8-C (HW Question #5 / Prompt #5): Evaluate their contribution to PC1 and PC2 using a biplot (fviz_pca_biplot). Color the two dolphin maturity classes on the biplot and include a convex hull around the two classes of dolphins. Suppress the arrows for the variables (compounds), only show the variable locations and text labels
+```{r}
+fviz_pca_biplot(pca_plot_2, geom.var= c("point","text"), habillage=Trego$Maturity, addEllipses=TRUE, ellipse.level=0.95)
+```
+
+#Step 9 (HW Question #6 / Prompt #6): Based on the final biplot, are different compounds associated more with immature than mature dolphins? Write your answer in the R code as a comment or in text outside the R code chunk
+```{r}
+print("Based on the final plot, it seems tha different compounds associated more with mature than immature dolphins")
+```
+
+##End of the analysis
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

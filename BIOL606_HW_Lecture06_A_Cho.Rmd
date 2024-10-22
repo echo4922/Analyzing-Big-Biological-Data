@@ -1,0 +1,114 @@
+---
+title: "BIOL606 WED 02/08/23 HW LEC06 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "02/08/2023"
+output: html_notebook
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd() ) )
+```
+
+#Step 1: Invoke necessary packages
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggfortify)
+library(ggplot2)
+print("Done. All libraries loaded")
+```
+
+#Step 2: Read data & save as dataframe
+```{r}
+#read data
+cucumberdamage <- read.csv("lecture5_cucumberdamage.csv")
+print("Done. Data loaded and saved as dataframe")
+
+#check dimension of data
+dim(cucumberdamage)
+
+#display first 6 rows of data
+head(cucumberdamage)
+```
+
+#Step 3 (Question 1/Prompt 1): Is the total number of fruits produced affected by herbivore damage to leaves (i.e., "leafdamage") and hand-pollination treatments?
+```{r}
+print("To find out, whether the total number of fruits produced is affected by herbivore damage to leaves, linear model is plotted")
+
+#Do basic lm model 
+model_1 <- lm(totalfruits ~  leafdamage * pollination, data=cucumberdamage)
+autoplot(model_1)
+
+anova(model_1)
+plot(model_1)
+
+#Do glm model
+model_2 <- glm(totalfruits ~ leafdamage * pollination, data=cucumberdamage, family=poisson())
+autoplot(model_2)
+
+anova(model_2)
+plot(model_2)
+
+print("Based on the computed lm table, leafdamage:pollination is larger than 0.05, (exact value is 0.5909), it seems that it is not siginificant enough to rejct the null hypothesis.")
+```
+
+#Step 4 (Question 2/Prompt 2): Make a figure of the results, with separate lines for the two pollination treatments
+```{r}
+first_plot <- ggplot(cucumberdamage, aes(x=totalfruits, y=leafdamage, color=pollination)) +  
+              geom_point() + 
+              theme_bw() + 
+              geom_smooth(method = 'glm', se=FALSE) +
+              xlab("Total Fruits")  +  #add x axis label
+              ylab("Leaf Damage") + #add y axis label
+              labs(title = 'First plot: Total Fruits vs. Leaf Damage colored by Pollination')+ #add title
+              coord_cartesian(ylim = c(0,40)) #adjust y axis ticks marks (0 to 40)
+#Display plot
+print(first_plot)
+
+#Save plot
+ggsave("First_Plot.png", plot = first_plot)
+```
+
+#Step 5-A (Question 3/Prompt 3): Repeat steps 1 and 2, but instead of "leafdamage," use the categorical treatment variable "herbivory". Think about what the figure will look like for this scenario
+```{r}
+#do lm and glm using another categorical treatment variable, herbivory
+
+#LM
+model_3_a <- lm(totalfruits ~ herbivory * pollination, data=cucumberdamage)
+autoplot(model_3_a)
+anova(model_3_a)
+plot(model_3_a)
+
+#GLM
+model_3_b <- glm(totalfruits ~ herbivory * pollination, data=cucumberdamage, family=poisson())
+autoplot(model_3_b)
+anova(model_3_b)
+plot(model_3_b)
+
+print("Based on the computed lm table, herbivory:pollination is larger than 0.05, (exact value is 0.4763), it seems that it is not siginificant enough to rejct the null hypothesis.")
+```
+
+#Step 5-B (Question 3/Prompt 3): Repeat steps 1 and 2, but instead of "leafdamage," use the categorical treatment variable "herbivory". Think about what the figure will look like for this scenario
+```{r}
+print("For this scenario, the figure will be box plot")
+
+model_3_b <- ggplot(cucumberdamage, aes(x=totalfruits, y=herbivory, color=pollination)) +  
+             geom_boxplot() + 
+             theme_bw() +
+             coord_flip() + #Flip box plot
+             xlab("Total Fruits")  +  #add x axis label
+             ylab("Herbivory") + #add y axis label
+             labs(title = 'Box Plot of Total Fruits vs. Herbivory colored by Pollination') #add title
+
+#Display plot
+print(model_3_b)
+
+#Save plot
+ggsave("Box_Plot.png", plot = model_3_b)
+```
+
+
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY.")
+```

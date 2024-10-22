@@ -1,0 +1,92 @@
+---
+title: "BIOL606 WED 03/22/23 HW LEC10 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "03/22/2023"
+output: html_notebook
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary packages
+```{r setup, message=FALSE}
+library(scatterplot3d)
+library(AICcmodavg)
+library(tidyverse)
+library(ggfortify)
+library(corrplot)
+library(multcomp)
+library(ggplot2)
+library(psych)
+library(nlme)
+library(car)
+
+print("Done. All packages loaded")
+```
+
+#Step 2: Import data
+```{r}
+gut <- read.csv("gut_diversity.csv")
+
+print("Done. Data loaded as saved as dataframe")
+
+dim(gut)
+head(gut)
+```
+
+#Step 3: Scale ONLY the predictors (IVs: age, weight and exercise)
+```{r}
+gut$age <- scale(gut$age)
+gut$weight <- scale(gut$weight)
+gut$exercise <- scale(gut$exercise)
+print("Scaling all done")
+```
+
+#Step 4 (HW Question #1 / Prompt #1): Fit the gut OTU Shannon diversity model with an interaction (DV = diversity, IV = age, exercise,  and their interaction).
+```{r}
+model_1 <- lm(diversity ~ age * exercise, data = gut)
+anova(model_1)
+summary(model_1)
+```
+
+#Step 5 (HW Question #2 / Prompt #2): Test the IVs. There is an interaction, so type III Anova() would probably be best 
+```{r}
+Anova(model_1, type=3)
+```
+
+#Step 6 (HW Question #3 / Prompt #3): How would you describe, in  words (not numbers) the OTU diversity relationship with age and exercise? Include your  description in the text of your Rmd file
+```{r}
+print("Based on the Anova type III table, age:exercise interaction is not sigificant because it is bigger than 0.05. The computed value is  0.1405.")
+
+print("Assuming this value was less than 0.05, the interaction would be sigificant. Given exercise is siginifcant predictor of our response, diversity, the exercise would be predicted by diversity and how predictions occurs, it would be modulated by exercise")
+
+print("Now, looking at the summary table in the step 4, the interaction has negative values, which indicates negative directionality.  The exercise is siginificant so more exercise means more divesity. However, the interaction indicates which one affects which. For example, we do nt know  if age affects exercise or exercise affects age assuming the interaction is siginificant.")
+```
+
+#Step 7 (HW Question #4 / Prompt #4): It is hard to plot when you have >1 continuous IV. Try to come up with a way to do this
+```{r}
+#Please note that the following code was referred from: 
+#http://www.sthda.com/english/wiki/scatterplot3d-3d-graphics-r-software-and-data-visualization
+#This graphic visualization needs '3dscatterplot' library installation 
+
+#x-axis is exercise
+#y-axis is diversity
+#z-axis is age
+plot_3d <- scatterplot3d(x=gut$exercise, y=gut$age, z=gut$diversity, pch = 19, color = "steelblue",grid = TRUE, box = TRUE, tick.marks=TRUE, angle = 50, xlab = "Exercise", ylab = "Diversity", zlab= "Age",   main = "3D Plot of Exercise vs Diversity vs Age" )
+```
+
+#Step 8: Export the plot from the Step 7
+```{r}
+png("3d_plot.png") #name the png file
+
+plot_3d <- scatterplot3d(x=gut$exercise, y=gut$age, z=gut$diversity, pch = 19, color = "steelblue",grid = TRUE, box = TRUE, tick.marks=TRUE, angle = 50, xlab = "Exercise", ylab = "Diversity", zlab= "Age",   main = "3D Plot of Exercise vs Diversity vs Age" ) #plot
+
+dev.off() #close the saving device/mechanism 
+```
+
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

@@ -1,0 +1,96 @@
+---
+title: "BIOL606_MON_HW_LEC03_Cho_NOTEBOOK_HTML"
+author: "Eddie Cho"
+date: "01/30/2023"
+output: html_notebook
+---
+
+#Verify current directory
+```{r}
+print("The analysis started...")
+print("YOUR current working directory is shown below")
+getwd()
+```
+
+##TEXTBOOK CHAPTER 3
+##TEXTBOOK CHAPTER 3
+```{r}
+#Invoke necessary library packages
+library(dplyr)
+library(ggplot2)
+
+print("Done. All packages loaded")
+
+rm(list = ls()) #lists all of the objects
+
+compensation <- read.csv("compensation.csv")
+print("Data loaded as saved as data frame")
+
+head(compensation) #display first five rows
+dim(compensation) #display dimension of data
+summary(compensation) #display summary stat of data
+
+select(compensation, Fruit) #"select" specifically chooses a specific COLUMN of data. In this case, "Fruit"
+select(compensation, -Root) #"select" also can specifically excludes COLUMN by putting minus sign
+
+slice(compensation, 2) #"slice" specifically chooses a specific ROW of data. In this case, it chooses ROW #2
+slice(compensation, 2:10) #Using :, it can chooses a specific RANGE of ROWS. In this case, ROW #2 to ROW #10
+
+slice(compensation, c(2, 3, 10)) #c() function R does Combine. Since slice choose rows, it combines ROW #2, ROW #3 and ROW #10
+
+with(compensation, Fruit > 80) #'with' function in R evaluates an expression then spits out a Boolean results(Boolean simply means TRUE or FALSE). If value of fruit column is bigger than 80 (>80), then it will show as TRUE. Otherwise, it will show as FALSE.
+
+print(paste("The value bigger than 80 in Fruit column of dataframe compesenation is", with(compensation, Fruit > 80))) #Adding print(paste()) enables to add a sentence for clarity of Boolean expression. I learned this in another class, which I found it really helpful to look at the results.
+
+filter(compensation,Fruit > 80) #filter subsets all rows that satisfy given conditions. In this case, it filters any row bigger than 80 (>80).  
+
+filter(compensation, Fruit > 80 | Fruit < 20) #In a wold of computers, computers do not understand a mathematical expression OR unlike us humans. Thus, | symbol denotes OR for computers. In this case, the it filters any row bigger than 80 (>80) OR smaller than 20 (<20). 
+
+lo_hi_fruit <- filter(compensation, Fruit > 80 | Fruit < 20) #Filtering any value bigger then 80 OR smaller than 20 THEN store to data frame called "lo_hi_fruit"
+print(lo_hi_fruit) #print lo_hi_fruit
+
+dim(compensation) #check dimension of original data. Currently, it is 40 by 3.
+head(compensation) # Display first 6 rows
+
+compensation <- mutate(compensation, logFruit = log(Fruit))
+
+dim(compensation) #check dimension of original data. With mutate() function, it is  now 40 by 4.
+head(compensation)  # Display first 6 rows and visually verify that a new column was added
+
+arrange(compensation, Fruit) #arrange is used to reorder the rows of a data frame based on chosen columns. In this case, data frame compensation is arranged by Fruit column. This is like soring in Excel by clicking in column
+
+select(filter(compensation, Fruit > 80), Root) #now the expression is  a bit complex, it is broken down to smaller expressions. First, it filters any value bigger then 80 in compensation dateframe, THEN it selects ROOT column. Thus, end result is that Root column is shown based on filtered Fruit column
+
+compensation %>% filter(Fruit > 80) %>% select(Root) #Instead of putting an expression inside an expression like above, using %>% known as pipe can do same expression. Here in this case, it selects ROOT column then filters any value bigger than 80. The result is identical to the expression above. Refer to: https://www.statology.org/pipe-in-r/ for more
+
+##OVERVIEW of SUMMARIZATION
+
+#METHOD #1: NESTED, NO PIPE
+summarise(group_by(compensation, Grazing), meanFruit = mean(Fruit)) #This nested expression calculates the mean of Fruit column then group by Grazing then summarize
+
+mean.fruit <- summarise(group_by(compensation, Grazing), meanFruit = mean(Fruit))
+print(mean.fruit) #another way to do is this way
+
+#METHOD #2: PIPE, NO NESTING
+compensation %>% group_by(Grazing) %>% summarise(meanFruit = mean(Fruit)) #this is way to pipe without nesting
+
+compensation %>% group_by (Grazing) %>% summarise( meanFruit = mean(Fruit), sdFruit= sd(Fruit) )
+#This does summarizes mean of Fruit column and standard deviation (sd) of Fruit column then group by Grazing column
+
+compensation_mean_centerd <- compensation %>% group_by(Grazing) %>% mutate(Fruit_minus_mean = Fruit - mean(Fruit))
+#This does mutation by adding fruit minus mean, which is Fruit - mean of Fruit of column the group by grazing THEN save to data frame called compensation_mean_centerd
+print(compensation_mean_centerd) #print compensation_mean_centerd
+
+library(broom)
+print("Library broom loaded")
+
+compensation_lms <- compensation %>% group_by(Grazing) %>% do(tidy(lm(Fruit ~ Root, data=.)))
+print(compensation_lms) #there is another way to do expression using library broom. 
+#Apparently,  do() is superseded as of dplyr 1.0 accroding to #https://dplyr.tidyverse.org/reference/do.html
+
+print("Textbook coding all done")
+```
+
+```{r}
+print("ALL ANALSYSIS DONE. HAVE A GREAT DAY.")
+```

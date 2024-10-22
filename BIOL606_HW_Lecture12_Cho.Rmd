@@ -1,0 +1,256 @@
+---
+title: "BIOL606 4/5/23 WED HW LEC12 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "04/05/2023"
+output: html_notebook
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary libraries/packages
+```{r setup, message=FALSE}
+
+library(car)
+library(nlme)
+library(boot)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+
+print("Done. All libraries/packages loaded")
+```
+
+#Step 2: Import data THEN remove NAs
+```{r}
+#load data and save as data frame called "snail"
+snail <- read.csv("SnailGrowth.csv", header=T)
+
+
+print("SnailGrowth.csv data loaded and saved as dataframe 'snail' ")
+
+#display first 6 rows
+head(snail)
+
+#display the dimension
+dim(snail) 
+
+#remove NAs
+snail = na.omit(snail)
+```
+
+##THIS IS TASK 1 of HW LEC 12
+
+#Step 3-A(from HW prompt/direction TASK 1): Using only the data for the ‘hot’ temperature treatment, compare the shell growth of the Crab and No-Crab treatment levels, using a permutation routine
+```{r}
+###Data wrangling before permutation analysis
+
+##The homework prompt is asking to choose row with specific keywords (aka stings in computer world)
+##Therefore, the very first step needs to be done is to have R to choose only rows containing keywords/strings 'hot'.
+
+#This stack-overflow provides an excellent solution:
+#https://stackoverflow.com/questions/22249702/delete-rows-containing-specific-strings-in-r
+
+#The following code is what it does in a simple human language:
+
+#R will look at data frame called 'snail' then filter by grabbing a specific string 'hot' in Temperature column then save results to a new data frame called task_1_snail_data 
+task_1_snail_data <- snail %>% filter(grepl('hot', Temperature))
+
+
+print("Done. A new data frame,'task_1_snail_data' has been created")
+
+#Saving the results to a new data frame makes much more sense than overwrite it to the original data frame(snail) because users can access to the original data instead of loading every time original data needs to be loaded to R
+
+#looking at head of task_1_snail_data compare to the original data, task_1_snail_data displays rows with strings 'hot'
+head(task_1_snail_data) 
+
+#looking at dimension of task_1_snail_data compare to the original data, task_1_snail_data displays decreased columns about by half
+dim(task_1_snail_data)
+
+#To double check if R truly chose rows with only the strings, utilize the sum function to a logical condition, which is referred from: 
+#https://statisticsglobe.com/count-occurrences-value-data-frame-r
+
+#Verify number of occurances of string "snail"
+print(paste("The number of occurrences from original data frame,'snail', is:", sum(snail$Temperature == "hot") ))
+```
+
+
+
+
+#Step 3-B(from HW prompt/direction - TASK 1) : Using only the data for the ‘hot’ temperature treatment, compare the shell growth of the Crab and No-Crab treatment levels, using a permutation routine
+```{r}
+##Now proceed to do permutation analysis
+#These codes provided during lecture 1
+
+#First, compute median
+task_1_snail_median = aggregate(ShellGrowth.mg ~ Crab, data = task_1_snail_data, FUN = median)
+print(task_1_snail_median)
+
+#Second, compute sd
+task_1_snail_sd = aggregate(ShellGrowth.mg ~ Crab, data = task_1_snail_data, FUN = sd)
+print(task_1_snail_sd)
+
+#Third, calculate absolute difference in the medians
+task_1_diff = abs(task_1_snail_median$ShellGrowth.mg[1] - task_1_snail_median$ShellGrowth.mg[2])
+print(paste("The absolute difference in the medians:", task_1_diff))
+
+print("All calculations done")
+```
+
+#Step 3-C: Create a barplot of median + 1 SD  at the crab/no crab
+```{r}
+##These codes provided during lecture 12
+
+p = barplot(height = task_1_snail_median$ShellGrowth.mg, names.arg =    
+    task_1_snail_median$ShellGrowth.mg,
+    main="Initial barplot of median + 1 SD  based on the crab/no crab presence",
+		col = c('firebrick','forestgreen'), ylim = c(0,80), las = 1,
+		ylab = 'ShellGrowth.mg', 
+		cex.axis = 1.2, cex.lab = 1.2, cex.names = 1.2)
+
+arrows(x0 = p, x1 = p, y0 = (task_1_snail_median$ShellGrowth.mg) - (task_1_snail_sd$ShellGrowth.mg),
+		y1 = task_1_snail_median$ShellGrowth + task_1_snail_sd$ShellGrowth, code = 3, angle = 90, lwd =2)
+```
+
+#Step 3-D (from HW prompt/direction - TASK 1): carry out 9999 permutations (+1 original value), calculate the permuted difference in medians, and 95% confidence interval derived from the permuted differences
+```{r}
+
+##These codes provided during lecture 12
+
+# Create a vector to hold the randomization results
+absdiffs = vector(mode='numeric', length = 10000)
+
+# Put the original observed difference in the 1st slot
+absdiffs[1] = task_1_diff
+
+```
+
+#Step 3-E (from HW prompt/direction - TASK 1): carry out 9999 permutations (+1 original value), calculate the permuted difference in medians, and 95% confidence interval derived from the permuted differences
+```{r}
+##These codes provided during lecture 12
+#This for loop takes some time
+for (i in 2: 10000) {
+  temp = task_1_snail_data
+  
+  temp$ShellGrowth.mg = sample(task_1_snail_data$ShellGrowth.mg, size = nrow(task_1_snail_data), replace=FALSE)
+  
+  temp2median = aggregate(ShellGrowth.mg ~ Crab, data = temp, FUN = median)
+  dif = abs(temp2median$ShellGrowth.mg[1] - temp2median$ShellGrowth.mg[2])
+  
+  absdiffs[i] = dif
+  }
+
+print("Done. 'For' loop was performed to generate the other 9999 randomizations")
+print(paste("Calculated the permuted difference in median is:", median(absdiffs) ) )
+```
+
+
+#Step 3-F: (from HW prompt/direction - TASK 1): carry out 9999 permutations (+1 original value), calculate the permuted difference in medians, and 95% confidence interval derived from the permuted differences
+```{r}
+###These codes provided during lecture 12
+absdiffs = absdiffs[order(absdiffs)]
+
+# Calculate the index for the 5% point
+indx = floor(length(absdiffs) * 0.95)  # Should be 9500 for a 10000 sample run
+# indx = 9500 # Alternately, if you definitely always have 10000 values
+print(paste("The indx:", (indx)))
+
+# See what the difference value is at indx
+print(paste("The difference value at indx:", absdiffs[indx]))
+
+# Use the which() function to find how many trials were greater or equal than
+
+equalgreater=length(which(absdiffs>=task_1_diff))
+print(equalgreater)
+
+
+# And calculate the probability by dividing by sample size
+
+p_value = equalgreater/length(absdiffs)
+print(paste("The calculated probability(dividing by sample size):", p_value) )
+```
+
+#Step 3-G: Is the observed difference in median growth of the two groups significantly different than what we would expect by random chance (i.e. if the two groups weren’t different)? Write your answer in your .Rmd file
+```{r}
+print("As shown above, the calculated probability(dividing by sample size) is 1e-04. In other words, the observed diference in median growth of the two two groups is significantly different than what we would expect by random chance.")
+```
+
+##THIS IS TASK 2 of HW LEC 12
+
+#Step 4-A: Use the boot() and boot.ci() functions to estimate the mean shell growth and BCa 95% confidence intervals for the Ambient temperature, No-Crab treatment group, based on 9999 resamples
+```{r}
+#Similar to Step 3-A, codes needs to be written such that it only extracts ambient temperature AND no crab treatment
+#Therefore, the following codes wil do in two steps: first step would be to extract 'ambient' from  temperature column THEN to extract 'no crab' from crab column
+
+#first step: extract 'ambient' 
+task_2_snail_data_first_step <- snail %>% 
+  filter(grepl('ambient', Temperature))
+
+#display first 6 rows
+head(task_2_snail_data_first_step)
+
+#display dimension
+dim(task_2_snail_data_first_step)
+
+#second step: extract 'no crab'
+task_2_snail_data_second_step <- task_2_snail_data_first_step  %>% 
+  filter(grepl('no crab', Crab))
+
+#display first 6 rows
+head(task_2_snail_data_second_step)
+
+#display dimention
+dim(task_2_snail_data_second_step)
+```
+
+#Step 4-B: Use the boot() and boot.ci() functions to estimate the mean shell growth and BCa 95% confidence intervals for the Ambient temperature, No-Crab treatment group, based on 9999 resamples
+```{r}
+###These codes provided during lecture 12
+
+myfun = function(x,i){
+  
+	# Generate a sample d from the input data x. The value i is a set of 
+	# indices in the input data x. i is what the boot() function will use
+	# as its random samples
+	d = x[i]
+	
+	# Calculate the mean of each resample d.
+    mymean = mean(d)
+    
+	# Also calculate the variance of each resample d 
+	# (only necessary for Studentized 95% CI)
+	myvar = var(d)
+	
+	# Return both the statistic of interest and the variance
+	# of that statistic (used to generate studentized bootstrap confidence 
+	# intervals later)
+	return(c(mymean,myvar))
+}
+```
+
+#Step 4-C: Your code should print out the observed mean and BCa 95% confidence intervals
+```{r}
+###These codes provided during lecture 12
+
+#carry out the bootstrap using the boot() function
+myboot = boot(data = task_2_snail_data_second_step$ShellGrowth.mg, statistic = myfun, R = 9999)
+
+#display the results
+print(myboot)
+
+# Calculate the bootstrap confidence intervals around the median. By default
+# this will calculate 5 different types of confidence interval. 
+mybootci = boot.ci(myboot, conf = 0.95)
+
+# Display confidence intervals
+print(mybootci)
+```
+
+##End of the analysis
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY☺︎︎")
+```

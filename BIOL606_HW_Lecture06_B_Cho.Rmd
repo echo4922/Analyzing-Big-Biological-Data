@@ -1,0 +1,138 @@
+---
+title: "BIOL606 WED 02/13/23 HW LEC06 B Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "02/13/2023"
+output: html_notebook
+---
+
+#Step0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step1: Invoke necessary packages
+```{r setup, message=FALSE}
+library(tidyverse)
+library(ggfortify)
+library(multcomp)
+library(ggplot2)
+library(car)
+
+print("Done. All packages loaded")
+```
+
+#Step2 (HW Question 1 / Prompt 1): Import lecture5_NEWcucumberdamage.csv
+```{r}
+new_cucumberdamage <- read.csv("lecture5_NEWcucumberdamage.csv")
+print("Done. All Data loaded and saved as dataframe")
+
+head(new_cucumberdamage) #Display first six rows data
+dim(new_cucumberdamage) #check dimensions of data
+```
+
+#Step 3 (HW Question 2 / Prompt 2): If you're going to analyze totalfruits again, is this dataset balanced with regards to  pollination & herbivory? What about pollination & leaf damage?
+```{r}
+#To check the "balance-ness" of data, table() function is used.
+
+# The following website explains more: https://www.projectpro.io/recipes/is-table-function-r-useful
+##(from the website) "Table function R performs a tabulation of categorical variable and gives its frequency as output. #It is further useful to create conditional frequency table and Proportinal frequency table".
+
+# HW Question 1 / Prompt 1 asks to do separate checks on: pollination & herbivory AND pollination & leaf damage
+
+#table_herb checks categorical variables on pollination & herbivory
+table_herb <- table(new_cucumberdamage$herbivory, new_cucumberdamage$pollination)
+print(table_herb)
+
+print("As shown above, categorical variables on pollination & herbivor (first table) looks balanced. The data contains NA, but it seems that table() function excluded. Therefore, it will be assumed that categorical variables on pollination & herbivor are based on the table. FYI, Balanced designs = equal sample size in all treatment combinations")
+
+
+#table_leaf checks categorical variables on pollination & leafdamage
+table_leaf <- table(new_cucumberdamage$pollination, new_cucumberdamage$leafdamage)
+print(table_leaf)
+
+print("As shown above, categorical variables on pollination & leaf damage (second table) clearly indicate it is unbalanced. FYI, Balanced designs = equal sample size in all treatment combinations ")
+
+print("I will pick the pollination & leaf damage as it is unbalanced, which seems to be more prevalent in biological data")
+```
+
+
+#Step 4: plot data
+```{r}
+#I picked pollination & leaf damage as it is unbalanced, which seems to be more prevalent in biological data
+#I picked pollination & leaf damage as it is unbalanced, which seems to be more prevalent in biological data
+initial_plot <- ggplot(data = new_cucumberdamage, aes(x = totalfruits, y = leafdamage, colour=pollination)) +
+                geom_point() +
+                geom_smooth() +
+                xlab("Total Fruits") +
+                ylab("Leaf Damage") + 
+                labs(title = 'Initial Plot of total fruits vs herbivory based on pollination status') 
+
+print(initial_plot)
+```
+
+
+#Step 5-a (HW Question 3 / Prompt 3) Pick one of these pairs of IVs (pollination & herbivory, or pollination & leaf  damage). Determine if these variables affect totalfruits, including an interaction, and  going through the same steps you did last time to fit the model
+```{r}
+#step 5-a: Do basic lm model for pollination & leaf damage
+leaf_model_lm <- lm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage)
+autoplot(leaf_model_lm)
+anova(leaf_model_lm)
+summary(leaf_model_lm)
+
+print("As shown above, Residual vs. Fitted graph seem to have a shaped on right side cone where as predicted values get larger, values are more scattered, hence the cone shape. Using the basic LM model might not be the most ideal model")
+```
+
+#Step 5-b (HW Question 3 / Prompt 3) Pick one of these pairs of IVs (pollination & herbivory, or pollination & leaf  damage). Determine if these variables affect totalfruits, including an interaction, and  going through the same steps you did last time to fit the model
+```{r}
+#step 5-b: Do GLM  model for pollination & leaf damage with family = poisson
+leaf_model_glm_1 <- glm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage, family=poisson)
+autoplot(leaf_model_glm_1)
+anova(leaf_model_glm_1)
+summary(leaf_model_glm_1)
+
+print("Residual vs. Fitted graph seem to have a shaped on right side cone as the basic lm but a bit better with family = poisson")
+```
+
+#Step 5-c (HW Question 3 / Prompt 3) Pick one of these pairs of IVs (pollination & herbivory, or pollination & leaf  damage). Determine if these variables affect totalfruits, including an interaction, and  going through the same steps you did last time to fit the model
+```{r}
+#step 5-c: Do GLM  model for pollination & leaf damage with family = poisson with family = quasi poisson
+leaf_model_glm_2 <- glm(totalfruits ~  leafdamage * pollination, data=new_cucumberdamage, family=quasipoisson)
+autoplot(leaf_model_glm_2)
+anova(leaf_model_glm_2)
+summary(leaf_model_glm_2)
+
+print("Residual vs. Fitted graph seem to have a shaped on right side cone as the glm but a bit better with family = quasi-poisson")
+```
+#Step 6-A (HW Question 4 / Prompt 4): Test the variables in your model using both type 1 and type 3 approaches. Do the  results change? Do the conclusions change?
+```{r}
+##model 1: Type 1 for leafdamage *pollination
+
+#change the contrasts settings
+options(contrasts = c("contr.sum","contr.poly")) 
+
+#then refit the model under the new settings
+model_1 <- lm(totalfruits ~ leafdamage *pollination, data=new_cucumberdamage ) 
+
+anova(model_1)
+#switch them back
+options(contrasts = c("contr.treatment","contr.poly")) 
+```
+
+#Step 6-B (HW Question 4 / Prompt 4): Test the variables in your model using both type 1 and type 3 approaches. Do the  results change? Do the conclusions change?
+```{r}
+##Type 3 for leaf damage *pollination
+options(contrasts = c("contr.sum","contr.poly")) #change the contrasts settings
+model_3_lp <- lm(totalfruits ~ leafdamage *pollination, data=new_cucumberdamage ) #then refit the model under the new settings
+
+Anova(model_3_lp,type=3) #or Anova(model,type="III")
+options(contrasts = c("contr.treatment","contr.poly")) #switch them back
+```
+
+#Step 6-C (HW Question 4 / Prompt 4): Test the variables in your model using both type 1 and type 3 approaches. Do the results change? Do the conclusions change?
+```{r}
+print("As shown above in Step 6-A and Step 6-B, results do not change much. leafdamage:pollination  is bigger than 0.05 (The computed value is 0.5896 for BOTH TYPE 1 AND TYPE 3. Thus, the conclusion of leaf damage and pollination status regards to total fruis is not siginificant enough to reject the null hypothesis.")
+```
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY.")
+```

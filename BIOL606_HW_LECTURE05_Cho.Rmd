@@ -1,0 +1,174 @@
+---
+title: "BIOL606 MON 02/06/23 HW LEC05 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "02/06/2023"
+output: html_notebook
+---
+
+#Step0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd() ) )
+```
+
+#Step1: Invoke necessary packages
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+print("Done. All libraries loaded")
+```
+
+#Step2: load data and save as dataframe
+```{r}
+cdata <- read.csv("lecture3_cucumberdamage.csv")
+flowercounts <- read.csv("lecture3_flowercounts.csv")
+
+head(cdata)
+head(flowercounts)
+```
+
+#Step 3: manipulate data
+##PLEATE NOTE: codes below were provide by the professor (LEC5 slides)
+##PLEATE NOTE: codes below were provide by the professor (LEC5 slides)
+```{r}
+#save data as.factor
+cdata$plant <- as.factor(cdata$plant)
+
+#save data as.factor
+flowercounts$plant <- as.factor(flowercounts$plant)
+
+#summarize data then save as df
+flowertotals <- flowercounts %>% group_by(plant) %>%summarise(Fs = sum(F, na.rm=T), Ms = sum(M, na.rm=T))
+head(flowertotals)
+
+#left join data
+cfdata <- left_join(cdata, flowertotals, by = "plant")
+head(cfdata)
+
+#create ggplot
+male_plot <- ggplot(cfdata, aes(x = num_leaves, y = Ms)) + 
+             geom_point(method='lm', se=TRUE)
+print("male_plot")
+```
+#Step 4 (Question #1/Prompt #1): Form a hypothesis, being specific about it.Is total male flowers affected by number of leaves AND pollination treatment (in a single linear model)?
+```{r}
+print("Based on context given on lecture slide 05, the following is the hypothesis: thr higher number of leaves and higher pollination treatment by hand, the higher total male flowers will occur")
+```
+
+#Step 5 (QUESTION #2/Prompt #2): Visualize the data in a plot
+```{r}
+initial_plot <- ggplot(data = drop_na(cfdata), aes(x = num_leaves, y = Ms, colour=pollination )) +
+                geom_point() + geom_smooth(method ='lm', se=TRUE) + 
+                labs(title = 'Initial plot of number of leaves AND total Male flowers')
+print(initial_plot)
+```
+#Step 6 (QUESTION #3/Prompt #3): Build a model using lm().
+```{r}
+#Do LM 
+q3_model <- lm(Ms ~ num_leaves *pollination, data= cfdata)
+print(q3_model)
+```
+#Step 7 (QUESTION #4/Prompt #4): Assess the model
+```{r}
+#Do ANOVA
+anova(q3_model)
+
+#Do summary
+summary(q3_model)
+
+#create four plots
+plot(q3_model)
+```
+
+#Step 8 (QUESTION #5/Prompt #5): Interpret the model, particularly in light of your hypothesis.
+```{r}
+anova(q3_model)
+print("As shown above, given p-value  of num_leaves:pollination is larger than 0.05 (The computed p-value  of num_leaves:pollination is 0.3801), it fails to reject the null hypothesis. In other words, it is not siginificant")
+```
+
+
+#Step 9 (QUESTION #6/Prompt #6):Plot your results the way you would 		want it to look in a journal (or on grandma's refrigerator)
+```{r}
+improved_plot <- ggplot(data = drop_na(cfdata), aes(x = num_leaves, y = Ms, colour=pollination )) +
+                geom_point() + geom_smooth(method ='lm', se=TRUE) + 
+                labs(title = 'Improved plot of number of leaves AND total Male flowers') +
+                scale_fill_discrete(name = "Pollination Status ") + 
+                xlab("Number of Leaves")  + 
+                ylab("Total Male Flowers")
+print(improved_plot)
+```
+
+
+##TEXTBOOK CH7
+##TEXTBOOK CH7
+```{r}
+#read data
+soay <- read.csv("soaysheepfitness.csv")
+print("Done. Loaded data and saved as dataframe")
+
+#Peek at data
+glimpse(soay)
+
+#plot data
+first_plot <- ggplot(soay, aes(x = body.size, y = fitness)) +
+              geom_point() +
+              geom_smooth(method = "lm", se = FALSE) +
+              geom_smooth(span = 1, colour = "red", se = FALSE) +
+              xlab("Body mass (kg)") + ylab("Lifetime fitness")
+
+#Display first plot
+print(first_plot)
+
+#build a GLM
+soay.glm_1 <- glm(fitness ~ body.size, data = soay,family = poisson)
+print(soay.glm)
+
+#another way to do GLM
+soay.glm_2 <- glm(fitness ~ body.size, data = soay, family = poisson(link = log))
+
+#Do ANOVA
+anova(soay.glm)
+
+#Do ANOVA with chi distribution (NOTE: this is NOT chi square test)
+anova(soay.glm, test = "Chisq")
+
+#Do summary
+summary(soay.glm)
+
+#set MIN & MAX parameters
+min.size <- min(soay$body.size)
+max.size <- max(soay$body.size)
+
+# make the new.x values
+new.x <- expand.grid(body.size = seq(min.size, max.size, length=1000))
+
+#generate fits and standard errors
+new.y = predict(soay.glm, newdata = new.x, se.fit = TRUE)
+new.y = data.frame(new.y)
+
+#preview new.y
+head(new.y)
+
+#create DF called add.These which contains new.x and new.y
+addThese <- data.frame(new.x, new.y)
+addThese <- rename(addThese, fitness = fit)
+
+#preview addThese
+head(addThese)
+
+#Use mutate to add a new column
+addThese <- mutate(addThese, lwr = fitness - 1.96 * se.fit, upr = fitness + 1.96 * se.fit)
+
+#create ggplot
+second_plot <- ggplot(soay, aes(x = body.size, y = fitness)) +
+               geom_point(size = 3, alpha = 0.5) +
+               geom_smooth(data = addThese, aes(ymin = lwr, ymax = upr), stat = 'identity') +
+               theme_bw()
+print(second_plot)
+
+print("CH7 coding all done.")
+```
+
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY.")
+```

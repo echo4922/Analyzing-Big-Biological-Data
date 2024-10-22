@@ -1,0 +1,264 @@
+---
+title: "BIOL606 MON 02/27/23 HW LEC07 Cho HTML NOTEBOOK"
+author: "Eddie Cho"
+date: "02/27/2023"
+output: html_notebook
+---
+
+#Step 0: Verify current directory
+```{r}
+print("The analysis started...")
+print(paste("YOUR current working directory is:", getwd()))
+```
+
+#Step 1: Invoke necessary packages
+```{r setup, message=FALSE}
+library(AICcmodavg)
+library(tidyverse)
+library(ggfortify)
+library(corrplot)
+library(multcomp)
+library(ggplot2)
+library(car)
+
+print("Done. All packages loaded")
+```
+
+#Step 2: Read data and save as dataframe
+```{r}
+#Read original data
+deer <- read.table("Tbdeer.txt", header=T)
+head(deer) #Display first 6 rows of data
+dim(deer) #Display dimension of data
+
+#Drop columns containing NAs and save it as a new df, oh_deer
+oh_deer <- na.omit(deer)
+head(oh_deer) #Display first 6 rows of data
+dim(oh_deer) #Display dimension of data
+```
+
+#Step 3-A (HW Question #1 / Prompt #1): Pick two of these variables that are not highly correlated. Use binomial glm's to determine if these factors influence Elaphostrongylus cervinfection
+```{r}
+#In order to pick two variables, first we need to figure out how variables are correlated to each other
+#My presentation partner,Emma, showed me to do a fancy way to figure out known as correlation matrix
+#Find out more: http://www.sthda.com/english/wiki/visualize-correlation-matrix-using-correlogram
+#This requires library(corrplot) package installation
+cor_data <- cor(oh_deer) #Correlogram : Visualizing the correlation matrix
+
+corrplot(cor_data, method="color",order="hclust", addCoef.col = 1, number.cex = 0.65, tl.cex = 0.5) #create corr plot
+
+print("As shown above, variables that are correlated are highlighted as blue shades along with high numerical value while the variables that are not correlated are highlight as red/dark brown sades along with low numerical values.")
+
+print("Based on the correlation plot, I will choose 'Estate Size' AND 'Open Land' as these two are not correlated much to each other.")
+```
+
+#Step 3-B (HW Question #1 / Prompt #1): Pick two of these variables that are not highly correlated. Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+```{r}
+#From http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r: 
+#"cor.test is used to evaluate the association between two or more variables"
+
+#Based on the correlation plot, I chose "Estate Size" and "Open Land" and decided to do corr.test to see how exactly they are correlated
+cor.test(oh_deer$EstateSize, oh_deer$OpenLand)
+
+print("Based on the table, p-value is bigger than 0.05 (Computed p-value is 0.3218). Thus, it is not sigifciant to reject the null hypotheis. The null hypothesis must be accepted. This means that there is no correlation between two chosen variables, Estate Size and Open Land.")
+print("Now we can proceed with further analysis with two chosen variables, 'Estate Size' and 'Open Land' ")
+```
+
+#Step 3-C (HW Question #1 / Prompt #1): Pick two of these variables that are not highly correlated. Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from deer positive data
+deer_computed_value <- (oh_deer$DeerSampledCervi) - (oh_deer$DeerPosCervi)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+deer_estate_size_model <- glm(cbind(deer_computed_value, oh_deer$DeerPosCervi) ~ EstateSize,  data= oh_deer, family=binomial() )
+
+#summary of deer_estate_size_model
+summary(deer_estate_size_model)
+
+#do anova
+model_anova_1 <- anova(deer_estate_size_model , test="LRT")
+print(model_anova_1)
+
+print("As shown above, the chosen factor,'estate size model' does not seem to influence influence Elaphostrongylus cervi infection")
+```
+
+#Step 3-D (HW Question #1 / Prompt #1): Pick two of these variables that are not highly correlated. Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from deer positive data
+deer_computed_value <- (oh_deer$DeerSampledCervi) - (oh_deer$DeerPosCervi)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+open_land_model_1 <- glm(cbind(deer_computed_value, oh_deer$DeerPosCervi) ~ OpenLand,data= oh_deer, family=binomial() )
+
+#summary of open land model
+summary(open_land_model_1)
+
+#Do anova
+open_land_model_1_anova <- anova(open_land_model_1, test="LRT")
+print(open_land_model_1_anova)
+
+print("Unfortunately, the chosen factor,'open land' semms to influence influence Elaphostrongylus cervi infection. Thus, further evaulation for this factor is needed.")
+```
+
+#Step 3-E (HW Question #1 / Prompt #1): Pick two of these variables that are not highly correlated. Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from deer positive data
+deer_computed_value <- (oh_deer$DeerSampledCervi) - (oh_deer$DeerPosCervi)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+open_land_model_2 <- glm(cbind(deer_computed_value, oh_deer$DeerPosCervi) ~ OpenLand,  data= oh_deer, family=quasibinomial() )
+
+#summary of quasi bionomial open land model
+summary(open_land_model_2)
+
+#Do anova with test = f 
+open_land_model_2_anova <- anova(open_land_model_2, test="F")
+print(open_land_model_2_anova)
+
+print("As shown above, further evaulation was performed using quasi binomial on the factor, 'open land model'. Even after, quasi bionomial of glm and anova with test='F', the 'open land model' facor seems to be influced by Elaphostrongylus cervi infection")
+```
+
+#Step 4-A (HW Question #2 / Prompt #2) Use a similar approach to determine if these factors affect Tb prevalance  in boars (switch out the deer infection variables for boar infection).  Annotate your code to explain your choices and the steps you take. There is  more than one "correct" way to do these analyses, and thus potentially  more than one "correct" answer
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from boar positive data
+boar_computed_value <- (oh_deer$BoarSampledTB) - (oh_deer$BoarPosTB)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+boar_estate_size_model_1 <- glm(cbind(boar_computed_value, oh_deer$BoarPosTB) ~ EstateSize,  data= oh_deer, family=binomial() )
+
+#summary of estate size model for BOAR
+summary(boar_estate_size_model_1)
+
+#Do anova 
+boar_estate_size_model_1_anova <- anova(boar_estate_size_model_1, test="LRT")
+print(boar_estate_size_model_1_anova)
+
+print("As shown above, the factor esate size model for boar seems to be influenced by Elaphostrongylus cervi infection. A futher analsysis is needed")
+```
+
+#Step 4-B (HW Question #2 / Prompt #2) Use a similar approach to determine if these factors affect Tb prevalance in boars (switch out the deer infection variables for boar infection).  Annotate your code to explain your choices and the steps you take. There is  more than one "correct" way to do these analyses, and thus potentially  more than one "correct" answer
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from boar positive data
+boar_computed_value <- (oh_deer$BoarSampledTB) - (oh_deer$BoarPosTB)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+boar_estate_size_model_2 <- glm(cbind(boar_computed_value, oh_deer$BoarPosTB) ~ EstateSize,  data= oh_deer, family=quasibinomial() )
+
+#summary of estate size model for BOAR
+summary(boar_estate_size_model_2)
+
+#Do anova 
+boar_estate_size_model_2_anova <- anova(boar_estate_size_model_2, test="F")
+print(boar_estate_size_model_2_anova)
+
+print("As shown above, the futher analsysis was performed using quasibinomial for glm and anova with test='f'. For this analyis, the factor esate size model for boar does not seem too much to be influenced by Elaphostrongylus cervi infection compare to the previous analysis chunk")
+```
+
+#Step 4-C (HW Question #2 / Prompt #2) Use a similar approach to determine if these factors affect Tb prevalance  in boars (switch out the deer infection variables for boar infection).  Annotate your code to explain your choices and the steps you take. There is  more than one "correct" way to do these analyses, and thus potentially  more than one "correct" answer
+```{r}
+#Subtract the parasitic nematode, Elaphostrongylus cervi sampled data from boar positive data
+boar_computed_value <- (oh_deer$BoarSampledTB) - (oh_deer$BoarPosTB)
+
+#Use binomial glm's to determine if these factors influence Elaphostrongylus cervi infection
+boar_open_land_model_1 <- glm(cbind(boar_computed_value, oh_deer$BoarPosTB) ~ OpenLand,  data= oh_deer, family=binomial() )
+
+#summary of open land model for BOAR
+summary(boar_open_land_model_1)
+
+#Do anova 
+boar_open_land_model_1_anova <- anova(boar_open_land_model_1, test="LRT")
+print(boar_open_land_model_1_anova)
+
+print("As shown above, the factor, 'open land' on boar does not seem to influce munch Elaphostrongylus cervi infection. No further analysis necessary")
+```
+
+#Step 5 (HW Question #3 / Prompt #3) Make a figure for each result. This probalby will be hard, and you will  have to do some googling. Try to describe what you think it should look like.  You might not solve this one, but do your best and share your findings with  others.
+```{r}
+print("I did not know what to do so I just made a box plot for each result but I am not so sure what it should look like")
+boxplot(open_land_model_1_anova)
+boxplot(open_land_model_2_anova)
+boxplot(boar_estate_size_model_1_anova)
+boxplot(boar_estate_size_model_2_anova)
+boxplot(boar_open_land_model_1_anova)
+```
+
+##Reading HW: Mixed model blog post (Hajduk 2016)
+##Reading HW: Mixed model blog post (Hajduk 2016)
+```{r}
+#Step 0: Invoke necessary packages
+library(stargazer)
+library(ggplot2)
+library(lme4)
+
+#Step 1: Load data
+load("dragons.RData")
+print("Done. Data loaded")
+
+head(dragons)
+
+#Step 2: create a basic histogram
+hist(dragons$testScore, col="red") 
+
+#Step 3: scale the data
+#According to website, scale() centers the data (the column mean is subtracted from the values in the column) and then scales it (the centered column values are divided by the column’s standard deviation).
+dragons$bodyLength2 <- scale(dragons$bodyLength)
+
+#do basic lm y using test score as y and body length as x
+basic.lm <- lm(testScore ~ bodyLength2, data = dragons)
+summary(basic.lm)
+
+#create basic scatter plot
+ggplot(dragons, aes(x = bodyLength, y = testScore)) + geom_point() + geom_smooth(method = "lm")
+
+#create four autoplots
+autoplot(basic.lm)
+
+boxplot(testScore ~ mountainRange, data = dragons)
+
+ggplot(dragons, aes(x = bodyLength, y = testScore, colour = mountainRange)) + geom_point(size = 2) + 
+theme_classic() + theme(legend.position = "none")
+
+ggplot(aes(bodyLength, testScore), data = dragons) + geom_point() +  facet_wrap(~ mountainRange) + xlab("length") + ylab("test score")
+
+mountain.lm <- lm(testScore ~ bodyLength2 + mountainRange, data = dragons)
+summary(mountain.lm)
+
+mixed.lmer <- lmer(testScore ~ bodyLength2 + (1|mountainRange), data = dragons)
+summary(mixed.lmer)
+
+plot(mixed.lmer)
+
+qqnorm(resid(mixed.lmer))
+qqline(resid(mixed.lmer))
+
+summary(mixed.lmer)
+
+339.7/(339.7 + 223.8)
+
+head(dragons)
+str(dragons)
+
+dragons <- within(dragons, sample <- factor(mountainRange:site))
+
+mixed.WRONG <- lmer(testScore ~ bodyLength2 + (1|mountainRange) + (1|site), data = dragons)  
+
+mixed.lmer2 <- lmer(testScore ~ bodyLength2 + (1|mountainRange) + (1|sample), data = dragons) 
+summary(mixed.lmer2)
+
+ggplot(dragons, aes(x = bodyLength, y = testScore, colour = site)) + facet_wrap(~mountainRange, nrow=3) + geom_point() + theme_classic() + geom_line(data = cbind(dragons, pred = predict(mixed.lmer2)), aes(y = pred)) +
+theme(legend.position = "none")
+
+stargazer(mixed.lmer2, type = "text", digits = 3, star.cutoffs = c(0.05, 0.01, 0.001), digit.separator = "")
+
+full.lmer <- lmer(testScore ~ bodyLength2 + (1|mountainRange) + (1|sample), data = dragons, REML = FALSE)
+
+reduced.lmer <- lmer(testScore ~ 1 + (1|mountainRange) + (1|sample), data = dragons, REML = FALSE)
+
+anova(reduced.lmer, full.lmer)
+
+print("Reading HW: Mixed model blog post coding all done.")
+```
+
+```{r}
+print("ALL ANALSYSIS DONE. CHECK HTML OUTPUT & CHECK EXPORTED FILES IF ANY. HAVE A GREAT DAY.")
+```
