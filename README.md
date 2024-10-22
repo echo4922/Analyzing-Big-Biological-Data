@@ -1,0 +1,1 @@
+As a gradute-level elective course, I took a class analyzing big biological data, speicfically focused in ecology field using R programming and its markdown language with notebook files. These are not sequencing data.
